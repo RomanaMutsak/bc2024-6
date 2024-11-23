@@ -5,6 +5,8 @@ const multer = require('multer');
 const { Command } = require('commander');
 const app = express();
 const upload = multer();
+const setupSwagger = require('./swagger');
+setupSwagger(app); 
 
 const program = new Command();
 program
@@ -22,11 +24,38 @@ if (!fs.existsSync(cache)) {
 app.use(express.urlencoded({ extended: true }));
 
 // GET /UploadForm.html
+/**
+ * @swagger
+ * /UploadForm.html:
+ *   get:
+ *     summary: Serve the upload form HTML
+ *     responses:
+ *       200:
+ *         description: HTML form for file upload
+ */
 app.get('/UploadForm.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'UploadForm.html'));
 });
 
 // GET /notes/:name
+/**
+ * @swagger
+ * /notes/{name}:
+ *   get:
+ *     summary: Get a specific note by name
+ *     parameters:
+ *       - in: path
+ *         name: name
+ *         required: true
+ *         description: The name of the note to fetch
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: The content of the note
+ *       404:
+ *         description: Note not found
+ */
 app.get('/notes/:name', (req, res) => {
     const notePath = path.join(cache, req.params.name + '.txt');
     if (fs.existsSync(notePath)) {
@@ -38,6 +67,31 @@ app.get('/notes/:name', (req, res) => {
 });
 
 // PUT /notes/:name
+/**
+ * @swagger
+ * /notes/{name}:
+ *   put:
+ *     summary: Update a specific note by name
+ *     parameters:
+ *       - in: path
+ *         name: name
+ *         required: true
+ *         description: The name of the note to update
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: string
+ *     responses:
+ *       200:
+ *         description: The note was updated
+ *       404:
+ *         description: Note not found
+ *       415:
+ *         description: Unsupported media type
+ */
 app.put('/notes/:name', (req, res, next) => {
     if (req.is('application/json')) {
         express.json()(req, res, next);
@@ -59,6 +113,24 @@ app.put('/notes/:name', (req, res, next) => {
 });
 
 // DELETE /notes/:name
+/**
+ * @swagger
+ * /notes/{name}:
+ *   delete:
+ *     summary: Delete a specific note by name
+ *     parameters:
+ *       - in: path
+ *         name: name
+ *         required: true
+ *         description: The name of the note to delete
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: The note was deleted
+ *       404:
+ *         description: Note not found
+ */
 app.delete('/notes/:name', (req, res) => {
     const notePath = path.join(cache, req.params.name + '.txt');
     if (fs.existsSync(notePath)) {
@@ -70,6 +142,15 @@ app.delete('/notes/:name', (req, res) => {
 });
 
 // GET /notes
+/**
+ * @swagger
+ * /notes:
+ *   get:
+ *     summary: Get all notes
+ *     responses:
+ *       200:
+ *         description: A list of notes
+ */
 app.get('/notes', (req, res) => {
     const notes = fs.readdirSync(cache).map(file => {
         const noteContent = fs.readFileSync(path.join(cache, file), 'utf-8');
@@ -82,6 +163,27 @@ app.get('/notes', (req, res) => {
 });
 
 // POST /write
+/**
+ * @swagger
+ * /write:
+ *   post:
+ *     summary: Create a new note
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               note_name:
+ *                 type: string
+ *               note:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: The note was created
+ *       400:
+ *         description: Note name and text are required
+ */
 app.post('/write', upload.none(), (req, res) => {
     console.log(req.body);
     const noteName = req.body.note_name;
