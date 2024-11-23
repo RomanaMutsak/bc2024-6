@@ -16,6 +16,9 @@ ENV NODE_ENV production
 
 WORKDIR /usr/src/app
 
+COPY package.json .
+COPY package-lock.json .
+
 # Download dependencies as a separate step to take advantage of Docker's caching.
 # Leverage a cache mount to /root/.npm to speed up subsequent builds.
 # Leverage a bind mounts to package.json and package-lock.json to avoid having to copy them into
@@ -33,6 +36,8 @@ COPY . .
 
 # Expose the port that the application listens on.
 EXPOSE 3000
+EXPOSE 9229
 
 # Run the application.
 CMD node app.js
+CMD ["npx", "nodemon", "-L", "--inspect=0.0.0.0", "app.js"]
